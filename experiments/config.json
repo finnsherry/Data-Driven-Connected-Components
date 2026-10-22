@@ -1,0 +1,342 @@
+{
+    "01_OSC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "02_ODC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "05_ODC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "08_OSN": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "09_OSN": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "13_OSN": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "15_OSN": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "16_OSN": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "17_ODN": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "20_ODC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "21_OSC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "22_ODC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "24_OSC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "30_ODC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "34_ODC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "36_OSC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "37_ODN": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "38_ODC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "39_ODC": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    },
+    "48_OSN": {
+        "vesselness": {
+            "σ_s_list": [0.5, 1.0, 2.0, 4.0],
+            "σ_o": 0.5,
+            "σ_s_ext": 1.0,
+            "σ_o_ext": 0.5
+        },
+        "cost": {
+            "lambda": 100.0,
+            "p": 2
+        },
+        "connected_components": {
+            "delta": 1.0,
+            "G_inv": [1.0, 0.0, 0.00025],
+            "threshold": 0.8
+        }
+    }
+}
