@@ -11,7 +11,7 @@ from math import ceil
 from functools import lru_cache
 
 
-def single_scale_vesselness(U, σ_s_int, σ_o_int, σ_s_ext, σ_o_ext):
+def single_scale_vesselness(U, σ_s_int, σ_o_int, σ_s_ext, σ_o_ext, mask=None):
     """
     Compute the crossing-preserving vesselness[1] of the orientation score of an
     image `U`.
@@ -53,6 +53,11 @@ def single_scale_vesselness(U, σ_s_int, σ_o_int, σ_s_ext, σ_o_ext):
     S = torch.sqrt(λ1**2 + c**2)  # Structure measure.
     R = λ1 / (c + 1e-6)  # Anisotropy measure.
 
+    if mask is not None:
+        Q *= mask
+        S *= mask
+        R *= mask
+
     σ1 = 0.5
     σ2 = S.max()
 
@@ -66,7 +71,7 @@ def single_scale_vesselness(U, σ_s_int, σ_o_int, σ_s_ext, σ_o_ext):
     return V
 
 
-def multi_scale_vesselness(U, σ_s_list, σ_o, σ_s_ext, σ_o_ext):
+def multi_scale_vesselness(U, σ_s_list, σ_o, σ_s_ext, σ_o_ext, mask=None):
     """
     Compute the multiscale vesselness of the orientation score of an image
     `U` by combining crossing-preserving vesselnesses[1] at various scales via
@@ -86,8 +91,6 @@ def multi_scale_vesselness(U, σ_s_list, σ_o, σ_s_ext, σ_o_ext):
           in the orientational direction after taking derivatives.
           Notably, this regularisation is NOT truly external, because it
           commutes with the derivatives.
-        `dxy`: spatial resolution, which is equal in the x- and y-directions,
-          taking values greater than 0.
 
     Returns:
         torch.Tensor of multi scale vesselness of orientation score of retinal
@@ -101,12 +104,26 @@ def multi_scale_vesselness(U, σ_s_list, σ_o, σ_s_ext, σ_o_ext):
     """
     Vs = torch.zeros((len(σ_s_list), *U.shape), device=U.device)
     for i, σ_s in enumerate(σ_s_list):
-        Vs[i] = single_scale_vesselness(U, σ_s, σ_o, σ_s_ext, σ_o_ext)
+        Vs[i] = single_scale_vesselness(U, σ_s, σ_o, σ_s_ext, σ_o_ext, mask=mask)
     V_unnormalised = Vs.max(0)[0]  # Vs.sum(0) ?
     V = (V_unnormalised - V_unnormalised.min()) / (
         V_unnormalised.max() - V_unnormalised.min()
     )
     return V
+
+
+def field_of_view_mask(image, threshold=0.05, erosion=3., σ=2.):
+    """Mask of the field of view of `image`, i.e. without the black padding.
+    The boundary is smoothed on scale `σ` and moved `erosion` pixels inwards."""
+    radius = int(4 * σ) + 1
+    xs = torch.arange(-radius, radius + 1, device=image.device, dtype=torch.float32)
+    kernel = torch.exp(-xs**2 / (2 * σ**2))
+    kernel = kernel / kernel.sum()
+    blurred = (image > threshold).float()[None, None]
+    blurred = F.conv2d(blurred, kernel[None, None, :, None], padding=(radius, 0))
+    blurred = F.conv2d(blurred, kernel[None, None, None, :], padding=(0, radius))
+    # Along a straight edge, the blurred step equals Φ(distance / σ).
+    return blurred[0, 0] > torch.special.ndtr(torch.tensor(erosion / σ))
 
 
 def gaussian_blur_3d_separable(x, sigmas, truncate=4.0):

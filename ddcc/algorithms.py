@@ -146,7 +146,221 @@ def persistence(
     return u, alive_components
 
 
+# Evaluation
+
+
+def crossing_mask(gt: torch.Tensor, radius: int = 2) -> torch.Tensor:
+    """
+    Find pixels near crossings in ground truth labels `gt`, i.e. pixels for
+    which at least two distinct foreground labels lie within a square
+    neighbourhood of size `2 * radius + 1`.
+
+    Args:
+        `gt`: integer torch.Tensor of shape `[H, W]` of labels, where 0 is
+          background.
+      Optional:
+        `radius`: radius of the neighbourhood. Defaults to 2.
+
+    Returns:
+        Boolean torch.Tensor of shape `[H, W]`, True near crossings.
+    """
+    labels = gt[None, None].float()
+    size = 2 * radius + 1
+    max_label = F.max_pool2d(labels, size, stride=1, padding=radius)
+    # Minimum over foreground labels: ignore background by setting it to inf.
+    min_label = -F.max_pool2d(
+        -torch.where(labels > 0, labels, torch.inf), size, stride=1, padding=radius
+    )
+    return ((max_label > 0) & (max_label != min_label))[0, 0]
+
+
+def project_components(
+    components: torch.Tensor,
+    score: torch.Tensor,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    Project components on M_2 to the image plane, by taking at each pixel the
+    label at the orientation with largest `score` among labelled orientations.
+
+    Args:
+        `components`: integer torch.Tensor of shape `[Or, H, W]` of labels,
+          where 0 is background, e.g. as returned by `connected_components`.
+        `score`: torch.Tensor of shape `[Or, H, W]` used to select the
+          orientation, e.g. the orientation score or vesselness.
+
+    Returns:
+        Tuple of integer torch.Tensor of shape `[H, W]` of projected labels,
+        and boolean torch.Tensor of shape `[H, W]` which is True at pixels with
+        multiple distinct labels across orientations.
+    """
+    is_labelled = components > 0
+    masked_score = torch.where(is_labelled, score, -torch.inf)
+    orientation = masked_score.argmax(0, keepdim=True)
+    projected = components.gather(0, orientation)[0] * is_labelled.any(0)
+
+    max_label = components.amax(0)
+    min_label = torch.where(is_labelled, components, components.max() + 1).amin(0)
+    is_multilabel = is_labelled.any(0) & (max_label != min_label)
+    return projected, is_multilabel
+
+
+def compare_components(
+    pred: torch.Tensor,
+    gt: torch.Tensor,
+    mask: torch.Tensor | None = None,
+    matching: Literal["iou", "hungarian"] = "iou",
+    iou_threshold: float = 0.5,
+    min_fraction: float = 0.1,
+) -> dict:
+    """
+    Compare predicted components `pred` with ground truth components `gt`.
+
+    All statistics are computed from the contingency table, which counts the
+    pixels shared by each pair of labels. Pixels are considered if they lie in
+    `mask` and are foreground in either `pred` or `gt`.
+
+    Args:
+        `pred`: integer torch.Tensor of shape `[H, W]` of predicted labels,
+          where 0 is background.
+        `gt`: integer torch.Tensor of shape `[H, W]` of ground truth labels,
+          where 0 is background.
+      Optional:
+        `mask`: boolean torch.Tensor of shape `[H, W]` of pixels to evaluate,
+          e.g. `~crossing_mask(gt)`. Defaults to all pixels.
+        `matching`: how to match predicted and ground truth labels. "iou"
+          matches pairs with IoU > `iou_threshold`, which is a one-to-one
+          matching if `iou_threshold >= 0.5`.[1] "hungarian" matches to
+          maximise the total IoU. Defaults to "iou".
+        `iou_threshold`: IoU above which pairs are matched. Also used as minimum
+          IoU for "hungarian" matching. Defaults to 0.5.
+        `min_fraction`: fraction of a component that another label must cover
+          to count towards a split or merge. Defaults to 0.1.
+
+    Returns:
+        dict with
+          `accuracy`: fraction of pixels in matched pairs, among pixels in the
+            foreground of either labelling.
+          `grouping_accuracy`: as `accuracy`, but among pixels in the foreground
+            of both labellings, so that it only measures grouping errors.
+          `missed`: number of pixels foreground in `gt` but not in `pred`.
+          `spurious`: number of pixels foreground in `pred` but not in `gt`.
+          `VI_split`, `VI_merge`: conditional entropies H(pred | gt) and
+            H(gt | pred) on pixels in the foreground of both labellings, which
+            together form the variation of information.[2] `VI_split`
+            measures how much ground truth components are broken up, and
+            `VI_merge` how much predicted components mix ground truth
+            components.
+          `N_splits`: number of ground truth components which are covered by
+            at least two predicted labels.
+          `N_merges`: number of predicted components which cover at least two
+            ground truth labels.
+          `N_pred`, `N_gt`: numbers of predicted and ground truth labels.
+          `matches`: list of matched pairs `(pred_label, gt_label, iou)`.
+          `unmatched_pred`, `unmatched_gt`: lists of unmatched labels.
+
+    References:
+        [1]: A. Kirillov, K. He, R. Girshick, C. Rother, and P. Dollár.
+          "Panoptic Segmentation." In: IEEE/CVF Conference on Computer Vision
+          and Pattern Recognition (2019).
+          DOI:10.1109/CVPR.2019.00963.
+        [2]: M. Meilă. "Comparing Clusterings—an Information Based Distance."
+          In: Journal of Multivariate Analysis (2007).
+          DOI:10.1016/j.jmva.2006.11.013.
+    """
+    if mask is None:
+        mask = torch.ones_like(gt, dtype=torch.bool)
+    in_domain = mask & ((pred > 0) | (gt > 0))
+    pred_labels, table, gt_labels = contingency_table(pred[in_domain], gt[in_domain])
+    table = table.double()
+    N_pixels = table.sum()
+
+    # Background is label 0, which is the first row/column if present.
+    i0 = int(len(pred_labels) > 0 and pred_labels[0] == 0)
+    j0 = int(len(gt_labels) > 0 and gt_labels[0] == 0)
+    missed = table[0, j0:].sum() if i0 else 0.
+    spurious = table[i0:, 0].sum() if j0 else 0.
+    # Sizes of components include pixels overlapping with background.
+    pred_sizes = table.sum(1)[i0:]
+    gt_sizes = table.sum(0)[j0:]
+    table = table[i0:, j0:]
+    pred_labels = pred_labels[i0:]
+    gt_labels = gt_labels[j0:]
+
+    iou = table / (pred_sizes[:, None] + gt_sizes[None] - table)
+
+    match matching:
+        case "iou":
+            pred_idx, gt_idx = torch.nonzero(iou > iou_threshold, as_tuple=True)
+        case "hungarian":
+            from scipy.optimize import linear_sum_assignment
+
+            pred_idx, gt_idx = linear_sum_assignment(iou.cpu().numpy(), maximize=True)
+            pred_idx = torch.as_tensor(pred_idx, device=iou.device)
+            gt_idx = torch.as_tensor(gt_idx, device=iou.device)
+            keep = iou[pred_idx, gt_idx] > iou_threshold
+            pred_idx, gt_idx = pred_idx[keep], gt_idx[keep]
+        case _:
+            raise ValueError(
+                f"{matching} is not a valid matching! Choose one of `iou`, `hungarian`."
+            )
+    matched_pixels = table[pred_idx, gt_idx].sum()
+    N_overlap = table.sum()
+
+    # Variation of information on pixels which are foreground in both.
+    p = table / N_overlap
+    p_pred = p.sum(1, keepdim=True)
+    p_gt = p.sum(0, keepdim=True)
+    nonzero = p > 0
+    VI_split = (p * torch.log(p_gt / p))[nonzero].sum()
+    VI_merge = (p * torch.log(p_pred / p))[nonzero].sum()
+
+    N_splits = ((table / gt_sizes[None] >= min_fraction).sum(0) >= 2).sum()
+    N_merges = ((table / pred_sizes[:, None] >= min_fraction).sum(1) >= 2).sum()
+
+    matched_pred = set(pred_idx.tolist())
+    matched_gt = set(gt_idx.tolist())
+    return {
+        "accuracy": (matched_pixels / N_pixels).item(),
+        "grouping_accuracy": (matched_pixels / N_overlap).item(),
+        "missed": int(missed),
+        "spurious": int(spurious),
+        "VI_split": VI_split.item(),
+        "VI_merge": VI_merge.item(),
+        "N_splits": N_splits.item(),
+        "N_merges": N_merges.item(),
+        "N_pred": len(pred_labels),
+        "N_gt": len(gt_labels),
+        "matches": [
+            (pred_labels[i].item(), gt_labels[j].item(), iou[i, j].item())
+            for i, j in zip(pred_idx.tolist(), gt_idx.tolist())
+        ],
+        "unmatched_pred": [
+            l.item() for i, l in enumerate(pred_labels) if i not in matched_pred
+        ],
+        "unmatched_gt": [
+            l.item() for i, l in enumerate(gt_labels) if i not in matched_gt
+        ],
+    }
+
+
 # Helper Functions
+
+
+def contingency_table(
+    a: torch.Tensor, b: torch.Tensor
+) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    Count co-occurrences of labels in `a` and `b`, which have the same shape.
+
+    Returns:
+        Tuple of sorted unique labels in `a`, table of shape `[N_a, N_b]` of
+        counts, and sorted unique labels in `b`.
+    """
+    a_labels, a_idx = torch.unique(a, return_inverse=True)
+    b_labels, b_idx = torch.unique(b, return_inverse=True)
+    N_a, N_b = len(a_labels), len(b_labels)
+    table = torch.bincount((a_idx * N_b + b_idx).flatten(), minlength=N_a * N_b)
+    return a_labels, table.reshape(N_a, N_b), b_labels
 
 
 def label_components(on_data_grown: torch.Tensor, on_data: torch.Tensor, projective_line_bundle=True):
@@ -167,7 +381,7 @@ def label_components(on_data_grown: torch.Tensor, on_data: torch.Tensor, project
             grouped[grouped == old_label] = new_label
 
     N_components = grouped.max().item()
-    return [(grouped == i + 1).float() for i in range(N_components)], N_components
+    return grouped, N_components
 
 
 def step_connected_components(
