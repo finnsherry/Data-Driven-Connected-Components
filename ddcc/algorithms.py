@@ -138,7 +138,7 @@ def persistence(
         print(f"Hamiltonian did not converge to tolerance {tol}!")
 
     alive_components = []
-    for δ in δs:
+    for δ in tqdm(δs):
         on_data_grown = u <= δ
         _, N_components = label_components(on_data_grown, on_data, projective_line_bundle=projective_line_bundle)
         alive_components.append(N_components)
